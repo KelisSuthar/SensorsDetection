@@ -3,6 +3,7 @@ package com.example.sensorsdetection
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.Bundle
@@ -17,7 +18,6 @@ import androidx.core.app.ActivityCompat
 
 class MainActivity : AppCompatActivity() {
     var button: Button? = null
-
 
 
     @RequiresApi(Build.VERSION_CODES.P)
@@ -39,24 +39,33 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.P)
     private fun checkFingerPrint() {
-        val biometricPrompt = BiometricPrompt.Builder(this@MainActivity)
-            .setTitle("Title of Prompt")
-            .setSubtitle("Subtitle")
-            .setDescription("Uses FP")
-            .setNegativeButton(
-                "Cancel",
-                this.mainExecutor
-            ) { dialog, which ->
-                Toast.makeText(
-                    this,
-                    "Authentication Cancelled",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }.build()
+        val biometricPrompt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            BiometricPrompt.Builder(this@MainActivity)
+                .setTitle("Title of Prompt")
+                .setSubtitle("Subtitle")
+                .setDescription("Uses FP")
+                //TO Make Only Selected Authentication(if you want all Authentication eay do not pass this)
+                //.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)//For Both Face Finger Print
+                //.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)//For  Finger Print
+                .setNegativeButton(
+                    "Cancel",
+                    this.mainExecutor
+                ) { dialog, which ->
+                    Toast.makeText(
+                        this,
+                        "Authentication Cancelled",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }.build()
+        } else {
+            TODO("VERSION.SDK_INT < R")
+        }
 
         // start the authenticationCallback in mainExecutor
         biometricPrompt.authenticate(
-            getCancellationSignal() , mainExecutor,  object : BiometricPrompt.AuthenticationCallback() {
+            getCancellationSignal(),
+            mainExecutor,
+            object : BiometricPrompt.AuthenticationCallback() {
                 // here we need to implement two methods
                 // onAuthenticationError and onAuthenticationSucceeded
                 // If the fingerprint is not recognized by the app it will call
@@ -75,7 +84,11 @@ class MainActivity : AppCompatActivity() {
                 // Here you can also start a new activity after that
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
                     super.onAuthenticationSucceeded(result)
-                    Toast.makeText(this@MainActivity, "Authentication Succeeded", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Authentication Succeeded",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     // or start a new Activity
 
                 }
